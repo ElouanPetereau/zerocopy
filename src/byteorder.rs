@@ -1557,11 +1557,14 @@ mod tests {
 
         use serde::{Deserialize, Serialize};
 
-        use crate::{BigEndian, LittleEndian, U16};
+        use crate::{
+            byteorder::{Isize, Usize, F32, F64, I128, I16, I32, I64, U128, U16, U32, U64},
+            BigEndian, LittleEndian,
+        };
 
-        fn assert_primitive_roundtrip<WrapperType, PrimitiveType>(
-            wrapper_value: WrapperType,
+        fn assert_primitive_roundtrip<PrimitiveType, WrapperType>(
             primitive_value: PrimitiveType,
+            wrapper_value: WrapperType,
         ) where
             WrapperType: Serialize + for<'de> Deserialize<'de> + PartialEq + Debug,
             PrimitiveType: Serialize + for<'de> Deserialize<'de> + PartialEq + Debug,
@@ -1587,6 +1590,116 @@ mod tests {
             assert_primitive_roundtrip(
                 primitive_value_u16,
                 U16::<LittleEndian>::new(primitive_value_u16),
+            );
+
+            assert_primitive_roundtrip(
+                primitive_value_i16,
+                I16::<BigEndian>::new(primitive_value_i16),
+            );
+            let primitive_value_i16 = -123i16;
+            assert_primitive_roundtrip(
+                primitive_value_i16,
+                I16::<LittleEndian>::new(primitive_value_i16),
+            );
+
+            let primitive_value_u32 = 0x89AB_CDEFu32;
+            assert_primitive_roundtrip(
+                primitive_value_u32,
+                U32::<BigEndian>::new(primitive_value_u32),
+            );
+            assert_primitive_roundtrip(
+                primitive_value_u32,
+                U32::<LittleEndian>::new(primitive_value_u32),
+            );
+
+            let primitive_value_i32 = -0x1234_5678i32;
+            assert_primitive_roundtrip(
+                primitive_value_i32,
+                I32::<BigEndian>::new(primitive_value_i32),
+            );
+            assert_primitive_roundtrip(
+                primitive_value_i32,
+                I32::<LittleEndian>::new(primitive_value_i32),
+            );
+
+            let primitive_value_u64 = 0x0123_4567_89AB_CDEFu64;
+            assert_primitive_roundtrip(
+                primitive_value_u64,
+                U64::<BigEndian>::new(primitive_value_u64),
+            );
+            assert_primitive_roundtrip(
+                primitive_value_u64,
+                U64::<LittleEndian>::new(primitive_value_u64),
+            );
+
+            let primitive_value_i64 = -0x0123_4567_89AB_CDEFi64;
+            assert_primitive_roundtrip(
+                primitive_value_i64,
+                I64::<BigEndian>::new(primitive_value_i64),
+            );
+            assert_primitive_roundtrip(
+                primitive_value_i64,
+                I64::<LittleEndian>::new(primitive_value_i64),
+            );
+
+            let primitive_value_u128 = 0x1234u128;
+            assert_primitive_roundtrip(
+                primitive_value_u128,
+                U128::<BigEndian>::new(primitive_value_u128),
+            );
+            assert_primitive_roundtrip(
+                primitive_value_u128,
+                U128::<LittleEndian>::new(primitive_value_u128),
+            );
+
+            let primitive_value_i128 = -0x1234i128;
+            assert_primitive_roundtrip(
+                primitive_value_i128,
+                I128::<BigEndian>::new(primitive_value_i128),
+            );
+            assert_primitive_roundtrip(
+                primitive_value_i128,
+                I128::<LittleEndian>::new(primitive_value_i128),
+            );
+
+            let primitive_value_usize = 0xBEEFusize;
+            assert_primitive_roundtrip(
+                primitive_value_usize,
+                Usize::<BigEndian>::new(primitive_value_usize),
+            );
+            assert_primitive_roundtrip(
+                primitive_value_usize,
+                Usize::<LittleEndian>::new(primitive_value_usize),
+            );
+
+            let primitive_value_isize = -12isize;
+            assert_primitive_roundtrip(
+                primitive_value_isize,
+                Isize::<BigEndian>::new(primitive_value_isize),
+            );
+            assert_primitive_roundtrip(
+                primitive_value_isize,
+                Isize::<LittleEndian>::new(primitive_value_isize),
+            );
+
+            let primitive_value_f32 = 1.25f32;
+            assert_primitive_roundtrip(
+                primitive_value_f32,
+                F32::<BigEndian>::new(primitive_value_f32),
+            );
+            assert_primitive_roundtrip(
+                primitive_value_f32,
+                F32::<LittleEndian>::new(primitive_value_f32),
+            );
+
+            let primitive_value_f64 = -0.75f64;
+            assert_primitive_roundtrip(
+                primitive_value_f64,
+                F64::<BigEndian>::new(primitive_value_f64),
+            );
+            assert_primitive_roundtrip(
+                primitive_value_f64,
+                F64::<LittleEndian>::new(primitive_value_f64),
             );
         }
 
