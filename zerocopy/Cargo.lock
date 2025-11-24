@@ -398,6 +398,7 @@ dependencies = [
  "regex",
  "rustversion",
  "serde",
+ "serde_json",
  "static_assertions",
  "testutil",
  "zerocopy-derive",
