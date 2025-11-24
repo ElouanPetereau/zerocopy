@@ -419,6 +419,7 @@ dependencies = [
  "rand",
  "regex",
  "rustversion",
+ "serde",
  "static_assertions",
  "testutil",
  "zerocopy-derive",

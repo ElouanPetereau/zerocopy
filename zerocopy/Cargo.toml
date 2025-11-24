@@ -94,13 +94,19 @@ pinned-nightly = "nightly-2026-01-25"
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "doc_cfg", "--generate-link-to-definition", "--extend-css", "rustdoc/style.css"]
+rustdoc-args = [
+    "--cfg",
+    "doc_cfg",
+    "--generate-link-to-definition",
+    "--extend-css",
+    "rustdoc/style.css",
+]
 targets = [
     "x86_64-unknown-linux-gnu",
     "x86_64-apple-darwin",
     "x86_64-pc-windows-msvc",
     "i686-unknown-linux-gnu",
-    "i686-pc-windows-msvc"
+    "i686-pc-windows-msvc",
 ]
 
 [package.metadata.playground]
@@ -109,6 +115,7 @@ features = ["__internal_use_only_features_that_work_on_stable"]
 [features]
 alloc = []
 derive = ["zerocopy-derive"]
+serde = ["dep:serde"]
 simd = []
 simd-nightly = ["simd"]
 float-nightly = []
@@ -119,11 +126,13 @@ std = ["alloc"]
 __internal_use_only_features_that_work_on_stable = [
     "alloc",
     "derive",
+    "serde",
     "simd",
     "std",
 ]
 
 [dependencies]
+serde = { version = "1.0.0", default-features = false, optional = true }
 zerocopy-derive = { version = "=0.8.52", path = "zerocopy-derive", optional = true }
 
 # The "associated proc macro pattern" ensures that the versions of zerocopy and
