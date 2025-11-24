@@ -1551,85 +1551,6 @@ mod tests {
         test!(@unary Neg, neg, call_for_signed_types, call_for_float_types);
     }
 
-    #[cfg(feature = "serde")]
-    mod serde {
-        use core::fmt::Debug;
-
-        use serde::{Deserialize, Serialize};
-
-        use crate::{
-            byteorder::{Isize, Usize, F32, F64, I128, I16, I32, I64, U128, U16, U32, U64},
-            BigEndian, LittleEndian,
-        };
-
-        macro_rules! assert_serialization_roundtrip {
-            ($prim:ty, $wrapper:ident, $value:expr) => {{
-                let primitive_value: $prim = $value;
-                assert_roundtrip(primitive_value, $wrapper::<BigEndian>::new(primitive_value));
-                assert_roundtrip(primitive_value, $wrapper::<LittleEndian>::new(primitive_value));
-            }};
-        }
-
-        fn assert_roundtrip<PrimitiveType, WrapperType>(
-            primitive_value: PrimitiveType,
-            wrapper_value: WrapperType,
-        ) where
-            WrapperType: Serialize + for<'de> Deserialize<'de> + PartialEq + Debug,
-            PrimitiveType: Serialize + for<'de> Deserialize<'de> + PartialEq + Debug,
-        {
-            let serialized_value = serde_json::to_string(&wrapper_value)
-                .expect("Serialization to json should succeed");
-            let deserialized_primitive = serde_json::from_str(&serialized_value)
-                .expect("Deserialization from json to primitive type should succeed");
-            let deserialized_wrapper = serde_json::from_str(&serialized_value)
-                .expect("Deserialization from json to wrapper type should succeed");
-
-            assert_eq!(primitive_value, deserialized_primitive);
-            assert_eq!(wrapper_value, deserialized_wrapper);
-        }
-
-        #[test]
-        fn serialize_native_primitives() {
-            assert_serialization_roundtrip!(u16, U16, 0xABCDu16);
-            assert_serialization_roundtrip!(i16, I16, -123i16);
-            assert_serialization_roundtrip!(u32, U32, 0x89AB_CDEFu32);
-            assert_serialization_roundtrip!(i32, I32, -0x1234_5678i32);
-            assert_serialization_roundtrip!(u64, U64, 0x0123_4567_89AB_CDEFu64);
-            assert_serialization_roundtrip!(i64, I64, -0x0123_4567_89AB_CDEFi64);
-            assert_serialization_roundtrip!(u128, U128, 0x1234u128);
-            assert_serialization_roundtrip!(i128, I128, -0x1234i128);
-            assert_serialization_roundtrip!(usize, Usize, 0xBEEFusize);
-            assert_serialization_roundtrip!(isize, Isize, -12isize);
-            assert_serialization_roundtrip!(f32, F32, 1.25f32);
-            assert_serialization_roundtrip!(f64, F64, -0.75f64);
-        }
-
-        #[derive(Serialize, Deserialize, PartialEq, Debug)]
-        struct SerializableStruct {
-            value_a: U16<BigEndian>,
-            value_b: [U16<LittleEndian>; 2],
-        }
-
-        #[test]
-        fn serialize_struct() {
-            let primitive_value_u16 = 0xABCDu16;
-
-            let primitive_value = SerializableStruct {
-                value_a: U16::<BigEndian>::new(primitive_value_u16),
-                value_b: [
-                    U16::<LittleEndian>::new(primitive_value_u16),
-                    U16::<LittleEndian>::new(primitive_value_u16),
-                ],
-            };
-            let serialized_value = serde_json::to_string(&primitive_value)
-                .expect("Serialization to json should succeed");
-            let deserialized_wrapper: SerializableStruct = serde_json::from_str(&serialized_value)
-                .expect("Deserialization from json should succeed");
-
-            assert_eq!(primitive_value, deserialized_wrapper);
-        }
-    }
-
     #[test]
     fn test_debug_impl() {
         // Ensure that Debug applies format options to the inner value.
@@ -1669,5 +1590,84 @@ mod tests {
         assert_eq!(val_be_i16.get(), 1);
         assert_eq!(format!("{:?}", val_be_i16), "I16(1)");
         assert_eq!(val_be_i16.cmp(&val_be_i16), core::cmp::Ordering::Equal);
+    }
+}
+
+#[cfg(all(test, feature = "serde"))]
+mod serialization_tests {
+    use core::fmt::Debug;
+
+    use serde::{Deserialize, Serialize};
+
+    use crate::{
+        byteorder::{Isize, Usize, F32, F64, I128, I16, I32, I64, U128, U16, U32, U64},
+        BigEndian, LittleEndian,
+    };
+
+    macro_rules! assert_serialization_roundtrip {
+        ($prim:ty, $wrapper:ident, $value:expr) => {{
+            let primitive_value: $prim = $value;
+            assert_roundtrip(primitive_value, $wrapper::<BigEndian>::new(primitive_value));
+            assert_roundtrip(primitive_value, $wrapper::<LittleEndian>::new(primitive_value));
+        }};
+    }
+
+    fn assert_roundtrip<PrimitiveType, WrapperType>(
+        primitive_value: PrimitiveType,
+        wrapper_value: WrapperType,
+    ) where
+        WrapperType: Serialize + for<'de> Deserialize<'de> + PartialEq + Debug,
+        PrimitiveType: Serialize + for<'de> Deserialize<'de> + PartialEq + Debug,
+    {
+        let serialized_value =
+            serde_json::to_string(&wrapper_value).expect("Serialization to json should succeed");
+        let deserialized_primitive = serde_json::from_str(&serialized_value)
+            .expect("Deserialization from json to primitive type should succeed");
+        let deserialized_wrapper = serde_json::from_str(&serialized_value)
+            .expect("Deserialization from json to wrapper type should succeed");
+
+        assert_eq!(primitive_value, deserialized_primitive);
+        assert_eq!(wrapper_value, deserialized_wrapper);
+    }
+
+    #[test]
+    fn serialize_native_primitives() {
+        assert_serialization_roundtrip!(u16, U16, 0xABCDu16);
+        assert_serialization_roundtrip!(i16, I16, -123i16);
+        assert_serialization_roundtrip!(u32, U32, 0x89AB_CDEFu32);
+        assert_serialization_roundtrip!(i32, I32, -0x1234_5678i32);
+        assert_serialization_roundtrip!(u64, U64, 0x0123_4567_89AB_CDEFu64);
+        assert_serialization_roundtrip!(i64, I64, -0x0123_4567_89AB_CDEFi64);
+        assert_serialization_roundtrip!(u128, U128, 0x1234u128);
+        assert_serialization_roundtrip!(i128, I128, -0x1234i128);
+        assert_serialization_roundtrip!(usize, Usize, 0xBEEFusize);
+        assert_serialization_roundtrip!(isize, Isize, -12isize);
+        assert_serialization_roundtrip!(f32, F32, 1.25f32);
+        assert_serialization_roundtrip!(f64, F64, -0.75f64);
+    }
+
+    #[derive(Serialize, Deserialize, PartialEq, Debug)]
+    struct SerializableStruct {
+        value_a: U16<BigEndian>,
+        value_b: [U16<LittleEndian>; 2],
+    }
+
+    #[test]
+    fn serialize_struct() {
+        let primitive_value_u16 = 0xABCDu16;
+
+        let primitive_value = SerializableStruct {
+            value_a: U16::<BigEndian>::new(primitive_value_u16),
+            value_b: [
+                U16::<LittleEndian>::new(primitive_value_u16),
+                U16::<LittleEndian>::new(primitive_value_u16),
+            ],
+        };
+        let serialized_value =
+            serde_json::to_string(&primitive_value).expect("Serialization to json should succeed");
+        let deserialized_wrapper: SerializableStruct = serde_json::from_str(&serialized_value)
+            .expect("Deserialization from json should succeed");
+
+        assert_eq!(primitive_value, deserialized_wrapper);
     }
 }
