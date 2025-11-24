@@ -613,6 +613,36 @@ example of how it can be used for parsing UDP packets.
             }
         }
 
+        #[cfg_attr(doc_cfg, doc(cfg(feature = "serde")))]
+        #[cfg(feature = "serde")]
+        impl<O: ByteOrder> serde::Serialize for $name<O>
+        where
+            $native: serde::Serialize,
+        {
+            #[inline(always)]
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                $native::serialize(&self.get(), serializer)
+            }
+        }
+
+        #[cfg_attr(doc_cfg, doc(cfg(feature = "serde")))]
+        #[cfg(feature = "serde")]
+        impl<'de, O: ByteOrder> serde::Deserialize<'de> for $name<O>
+        where
+            $native: serde::Deserialize<'de>,
+        {
+            #[inline(always)]
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                $native::deserialize(deserializer).map(Self::from)
+            }
+        }
+
         $(
             impl<O: ByteOrder> From<$name<O>> for $larger_native {
                 #[inline(always)]

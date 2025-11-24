@@ -97,6 +97,7 @@ features = ["__internal_use_only_features_that_work_on_stable"]
 [features]
 alloc = []
 derive = ["zerocopy-derive"]
+serde = ["dep:serde"]
 simd = []
 simd-nightly = ["simd"]
 float-nightly = []
@@ -107,11 +108,13 @@ std = ["alloc"]
 __internal_use_only_features_that_work_on_stable = [
     "alloc",
     "derive",
+    "serde",
     "simd",
     "std",
 ]
 
 [dependencies]
+serde = { version = "1.0.0", default-features = false, optional = true }
 zerocopy-derive = { version = "=0.8.31", path = "zerocopy-derive", optional = true }
 
 # The "associated proc macro pattern" ensures that the versions of zerocopy and

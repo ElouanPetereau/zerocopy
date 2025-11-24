@@ -121,6 +121,10 @@ for network parsing.
   derives as `use zerocopy_derive::*` rather than by name (e.g., `use
   zerocopy_derive::FromBytes`).
 
+- **`serde`**
+  Provides `Serialize` and `Deserialize` impls for the `byteorder` numeric
+  wrappers by delegating to their underlying primitive types.
+
 - **`simd`**
   When the `simd` feature is enabled, `FromZeros`, `FromBytes`, and
   `IntoBytes` impls are emitted for all stable SIMD types which exist on the
