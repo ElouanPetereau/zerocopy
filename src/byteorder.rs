@@ -1604,30 +1604,32 @@ mod serialization_tests {
         BigEndian, LittleEndian,
     };
 
-    macro_rules! assert_serialization_roundtrip {
-        ($prim:ty, $wrapper:ident, $value:expr) => {{
-            let primitive_value: $prim = $value;
-            assert_roundtrip(primitive_value, $wrapper::<BigEndian>::new(primitive_value));
-            assert_roundtrip(primitive_value, $wrapper::<LittleEndian>::new(primitive_value));
-        }};
-    }
-
     fn assert_roundtrip<PrimitiveType, WrapperType>(
-        primitive_value: PrimitiveType,
-        wrapper_value: WrapperType,
+        to_serialize: WrapperType,
+        primitive_value: Option<PrimitiveType>,
     ) where
         WrapperType: Serialize + for<'de> Deserialize<'de> + PartialEq + Debug,
         PrimitiveType: Serialize + for<'de> Deserialize<'de> + PartialEq + Debug,
     {
         let serialized_value =
-            serde_json::to_string(&wrapper_value).expect("Serialization to json should succeed");
-        let deserialized_primitive = serde_json::from_str(&serialized_value)
-            .expect("Deserialization from json to primitive type should succeed");
+            serde_json::to_string(&to_serialize).expect("Serialization to json should succeed");
         let deserialized_wrapper = serde_json::from_str(&serialized_value)
             .expect("Deserialization from json to wrapper type should succeed");
+        assert_eq!(to_serialize, deserialized_wrapper);
 
-        assert_eq!(primitive_value, deserialized_primitive);
-        assert_eq!(wrapper_value, deserialized_wrapper);
+        if let Some(primitive_value) = primitive_value {
+            let deserialized_primitive = serde_json::from_str(&serialized_value)
+                .expect("Deserialization from json to primitive type should succeed");
+            assert_eq!(primitive_value, deserialized_primitive);
+        }
+    }
+
+    macro_rules! assert_serialization_roundtrip {
+        ($prim:ty, $wrapper:ident, $value:expr) => {{
+            let primitive_value: $prim = $value;
+            assert_roundtrip($wrapper::<BigEndian>::new(primitive_value), Some(primitive_value));
+            assert_roundtrip($wrapper::<LittleEndian>::new(primitive_value), Some(primitive_value));
+        }};
     }
 
     #[test]
@@ -1647,27 +1649,47 @@ mod serialization_tests {
     }
 
     #[derive(Serialize, Deserialize, PartialEq, Debug)]
-    struct SerializableStruct {
-        value_a: U16<BigEndian>,
-        value_b: [U16<LittleEndian>; 2],
+    struct SerializableStruct<WrapperTypeA, WrapperTypeB>
+    where
+        WrapperTypeA: PartialEq + Debug,
+        WrapperTypeB: PartialEq + Debug,
+    {
+        value_a: WrapperTypeA,
+        value_b: [WrapperTypeB; 2],
+        value_c: (WrapperTypeA, WrapperTypeB),
+    }
+
+    macro_rules! assert_struct_serialization_roundtrip {
+        ($prim:ty, $wrapper:ident, $value:expr) => {{
+            let primitive_value: $prim = $value;
+            let test_struct = SerializableStruct {
+                value_a: $wrapper::<BigEndian>::new(primitive_value),
+                value_b: [
+                    $wrapper::<LittleEndian>::new(primitive_value),
+                    $wrapper::<LittleEndian>::new(primitive_value),
+                ],
+                value_c: (
+                    $wrapper::<BigEndian>::new(primitive_value),
+                    $wrapper::<LittleEndian>::new(primitive_value),
+                ),
+            };
+            assert_roundtrip(test_struct, None::<$prim>);
+        }};
     }
 
     #[test]
     fn serialize_struct() {
-        let primitive_value_u16 = 0xABCDu16;
-
-        let primitive_value = SerializableStruct {
-            value_a: U16::<BigEndian>::new(primitive_value_u16),
-            value_b: [
-                U16::<LittleEndian>::new(primitive_value_u16),
-                U16::<LittleEndian>::new(primitive_value_u16),
-            ],
-        };
-        let serialized_value =
-            serde_json::to_string(&primitive_value).expect("Serialization to json should succeed");
-        let deserialized_wrapper: SerializableStruct = serde_json::from_str(&serialized_value)
-            .expect("Deserialization from json should succeed");
-
-        assert_eq!(primitive_value, deserialized_wrapper);
+        assert_struct_serialization_roundtrip!(u16, U16, 0xABCDu16);
+        assert_struct_serialization_roundtrip!(i16, I16, -123i16);
+        assert_struct_serialization_roundtrip!(u32, U32, 0x89AB_CDEFu32);
+        assert_struct_serialization_roundtrip!(i32, I32, -0x1234_5678i32);
+        assert_struct_serialization_roundtrip!(u64, U64, 0x0123_4567_89AB_CDEFu64);
+        assert_struct_serialization_roundtrip!(i64, I64, -0x0123_4567_89AB_CDEFi64);
+        assert_struct_serialization_roundtrip!(u128, U128, 0x1234u128);
+        assert_struct_serialization_roundtrip!(i128, I128, -0x1234i128);
+        assert_struct_serialization_roundtrip!(usize, Usize, 0xBEEFusize);
+        assert_struct_serialization_roundtrip!(isize, Isize, -12isize);
+        assert_struct_serialization_roundtrip!(f32, F32, 1.25f32);
+        assert_struct_serialization_roundtrip!(f64, F64, -0.75f64);
     }
 }
